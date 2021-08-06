@@ -22,6 +22,8 @@ const MIN_BOUNCES : usize   = 4;
 const NUM_AA : usize        = 4;
 const INV_AA                = @splat(4, 1.0 / @as(rfloat, NUM_AA));
 
+const MULTI_THREADED       = true;
+
 const MaterialType = enum { DIFFUSE, GLOSSY, MIRROR };
 
 const Material = struct {
@@ -593,7 +595,7 @@ fn join_thread(t : std.Thread, data : *WorkerThreadData) void {
 }
 
 fn wait_until_done(c : *Atomic(u32), goal_c : u32) !void {
-    while(true) {
+    while(MULTI_THREADED) {
         const cv = c.load(.Acquire);
         if(cv == goal_c) {
             break;
@@ -664,6 +666,7 @@ pub fn main() !void {
     var threads = try std.ArrayList(std.Thread).initCapacity(allocator, worker_count);
     var done_count = Atomic(u32).init(0);
     var work_queue = std.atomic.Queue(WorkItem).init();
+    if(MULTI_THREADED)
     {
         var i : usize = 0;
         while(i < worker_count) : (i += 1) {
@@ -676,6 +679,7 @@ pub fn main() !void {
     const num_chunks = num_pixels / chunk_size;
 
     const start_time = std.time.milliTimestamp();
+    if(MULTI_THREADED)
     {
         var chunk_i : usize = 0;
         var thread_i : usize = 0;
@@ -695,8 +699,10 @@ pub fn main() !void {
             thread_i = (thread_i + 1) % worker_count;
         }
     }
-
-    //try process_chunk(context, framebuffer.items, 0, num_pixels);
+    else {
+        try process_chunk(context, framebuffer.items, 0, num_pixels);
+    }
+    
     //for(work_items.items) | work_item| {
         //try process_chunk(work_item.context.*, work_item.buffer.*, work_item.offset, work_item.chunk_size);
     //}
@@ -704,7 +710,7 @@ pub fn main() !void {
     try wait_until_done(&done_count, num_chunks);
 
     const time_taken = std.time.milliTimestamp() - start_time;
-    std.debug.print("Took {} seconds\n", .{@divFloor(time_taken, 1000)});
+    std.debug.print("Took {d} seconds\n", .{@intToFloat(f32, time_taken)/1000.0});
 
     try write_tga(framebuffer.items, RESOLUTION, RESOLUTION);
 
