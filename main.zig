@@ -38,7 +38,7 @@ fn dot(a : Vec4, b : Vec4) rfloat {
     return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
 }
 
-fn cross(a : Vector(4, rfloat), b : Vector(4, rfloat)) Vector(4, rfloat) {
+fn cross(a : Vec4, b : Vec4) Vec4 {
     return .{a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]};
 }
 
@@ -158,7 +158,7 @@ fn make_sphere(radius : rfloat, center : Vec4, material : *const Material) Spher
 }
 
 const Camera = struct {
-    forward     : Vector(4, rfloat),
+    forward     : Vec4,
     fov_scale   : rfloat
 };
 
@@ -195,10 +195,10 @@ const Scene = struct {
 };
 
 const Ray = struct {
-    origin : Vector(4, rfloat),
-    dir    : Vector(4, rfloat),
+    origin : Vec4,
+    dir    : Vec4,
 
-    pub fn calc_intersection_point(self : Ray, t : rfloat) Vector(4, rfloat) {
+    pub fn calc_intersection_point(self : Ray, t : rfloat) Vec4 {
         return self.origin + self.dir * @splat(4, t);
     }
 };
